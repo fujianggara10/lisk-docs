@@ -222,6 +222,74 @@ npx hardhat compile
 
 Setelah kompilasi berhasil, Anda akan melihat folder baru bernama `artifacts/`, yang berisi [artefak kompilasi](https://hardhat.org/hardhat-runner/docs/advanced/artifacts).
 
+## Menguji Kontrak
+
+Untuk menguji kontrak NFT kita, kita akan menggunakan:
+
+* **Hardhat Network** – Jaringan Ethereum lokal untuk pengembangan.
+  Ini sudah terintegrasi dengan Hardhat dan digunakan sebagai jaringan default.
+* **Ethers.js** – Untuk berinteraksi dengan kontrak.
+* **Mocha** – Sebagai test runner dan untuk assertions.
+
+### Menyiapkan File Uji
+
+Buat direktori baru bernama `test` di dalam direktori root proyek kita.
+Kemudian, buat file baru di dalamnya dengan nama `NFT.js`, dan tambahkan kode berikut:
+
+```js title="test/NFT.js"
+const { expect } = require("chai");
+
+describe("NFT", function () {
+  let nftToken;
+
+  beforeEach(async () => {
+    // Deploy kontrak
+    const NFT = await ethers.getContractFactory("NFT");
+    nftToken = await NFT.deploy();
+  });
+
+  it("Seharusnya dapat melakukan mint NFT baru", async function () {
+    const [owner] = await ethers.getSigners();
+    // Sebelum mint NFT, saldo akun untuk NFT ini seharusnya nol.
+    expect(await nftToken.balanceOf(owner.address)).to.equal(0);
+    // Mint NFT
+    await nftToken.mint(owner.address);
+    // Setelah mint NFT, saldo akun untuk NFT ini seharusnya menjadi 1 untuk akun yang melakukan mint.
+    expect(await nftToken.balanceOf(owner.address)).to.equal(1);
+  });
+});
+```
+
+Pertama, kita mengimpor fungsi `expect` dari pustaka [Chai](https://www.chaijs.com/), agar dapat digunakan dalam pengujian unit untuk kontrak ini.
+
+Jika kamu telah mengatur proyekmu menggunakan Hardhat Toolbox seperti dijelaskan di langkah [Membuat proyek](#creating-a-project), maka kamu sudah memiliki `ethers` yang tersedia secara langsung.
+Jika belum, kamu bisa menginstal plugin `ethers` untuk Hardhat seperti dijelaskan di halaman referensi [hardhat-ethers](https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-ethers).
+Plugin Hardhat-Ethers memiliki API yang sama seperti [ethers.js](https://docs.ethers.org/v6/), dengan beberapa fitur tambahan [khusus Hardhat](https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-ethers#helpers), yang akan kita gunakan dalam pengujian kontrak ini.
+
+Selanjutnya, kita melakukan *deploy* kontrak NFT di dalam *hook* `beforeEach()`, memastikan kontrak selalu di-*deploy* sebelum setiap pengujian. Pengaturan ini mempermudah untuk menambahkan kasus uji lainnya di kemudian hari.
+
+Terakhir, kita mendefinisikan kasus uji `Seharusnya dapat melakukan mint NFT baru` untuk memverifikasi bahwa pemanggilan fungsi `.mint()` dari kontrak NFT akan mencetak NFT baru dan menambahkannya ke saldo akun yang mencetaknya.
+
+### Menjalankan Pengujian
+
+Sekarang, jalankan perintah `npx hardhat test` di terminal kamu.
+
+Kamu akan melihat output seperti berikut:
+
+```sh
+% npx hardhat test
+
+  NFT
+    ✔ Seharusnya dapat melakukan mint NFT baru (92ms)
+
+
+  1 passing (1s)
+```
+
+Ini menunjukkan bahwa pengujian telah berhasil dijalankan.
+
+Untuk informasi lebih lanjut tentang cara menguji smart contract dengan Hardhat, silakan lihat [dokumentasi Hardhat](https://hardhat.org/tutorial/testing-contracts).
+
 ## Deploy Smart Contract
 
 Setelah contract Anda berhasil dikompilasi, Anda dapat deploy contract ke jaringan test Lisk Sepolia.
